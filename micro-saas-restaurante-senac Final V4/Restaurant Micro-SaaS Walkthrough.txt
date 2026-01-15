@@ -1,0 +1,51 @@
+Restaurant Micro-SaaS Walkthrough
+I have successfully created the base structure for your Restaurant Management Micro-SaaS.
+
+Completed Features
+Project Structure: Django project setup with restaurant app.
+Models:
+Mesa
+: Manage restaurant tables (Number, Capacity, Status).
+Prato
+: Manage menu items (Name, Price, Category, Image).
+Views & Templates:
+Dashboard: Overview of tables and menu items.
+Login: Custom styled login page for restaurant admins.
+Table Management: List, Add, Edit, Delete tables.
+Menu Management: Visual card-based menu, Add/Edit/Delete dishes.
+Design:
+Fully responsive Dark Theme (#121212) with Orange (#FF8C00) accents.
+Used Bootstrap 5 for layout and components.
+How to Run
+
+1. Database Setup (Already performed)
+The migrations have been created. If needed, run:
+
+python manage.py migrate
+
+2. Create an Admin User
+To access the system, you must create a superuser:
+
+python manage.py createsuperuser
+
+Follow the prompts to set a username and password.
+
+3. Run the Server
+Start the development server:
+
+python manage.py runserver
+
+4. Access the App
+OPEN Browser at: http://127.0.0.1:8000/
+Login with the superuser credentials you just created.
+Project Structure
+restaurant/models.py
+: Database models.
+restaurant/views.py
+: Logic for pages.
+restaurant/urls.py
+: App routing.
+templates/base.html
+: Main layout (Navbar, Footer, CSS).
+static/css/styles.css
+: Custom Dark/Orange theme styles.

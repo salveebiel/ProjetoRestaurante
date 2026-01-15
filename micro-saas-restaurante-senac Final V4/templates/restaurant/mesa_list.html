@@ -1,0 +1,50 @@
+{% extends 'base.html' %}
+
+{% block title %}AdmSenac{% endblock %}
+
+{% block content %}
+<div class="d-flex justify-content-between align-items-center mb-4">
+    <h2 class="text-orange">Gestão de Mesas</h2>
+    <a href="{% url 'mesa_create' %}" class="btn btn-orange"><i class="bi bi-plus-lg"></i> Nova Mesa</a>
+</div>
+
+<div class="table-responsive">
+    <table class="table  table-hover align-middle table-modern">
+        <thead>
+            <tr>
+                <th  class="bg-orange text-light" >Número</th>
+                <th  class="bg-orange text-light">Capacidade</th>
+                <th  class="bg-orange text-light">Status</th>
+                <th  class="bg-orange text-light">Ações</th>
+            </tr>
+        </thead>
+        <tbody>
+            {% for mesa in mesas %}
+            <tr >
+                <td style="background-color: #292929; color: aliceblue;">
+                    <h5 class="mb-0">Mesa {{ mesa.numero }}</h5>
+                </td>
+                <td style="background-color: #292929; color: aliceblue;">{{ mesa.capacidade }} lugares</td>
+                <td style="background-color: #292929; color: aliceblue;">
+                    {% if mesa.status == 'LIVRE' %}
+                    <span class="badge badge-livre"><i class="bi bi-check-circle"></i> Livre</span>
+                    {% else %}
+                    <span class="badge badge-ocupada"><i class="bi bi-x-circle"></i> Ocupada</span>
+                    {% endif %}
+                </td>
+                <td style="background-color: #292929; color: aliceblue;">
+                    <a href="{% url 'mesa_update' mesa.pk %}" class="btn btn-sm btn-outline-warning" title="Editar"><i
+                            class="bi bi-pencil"></i></a>
+                    <a href="{% url 'mesa_delete' mesa.pk %}" class="btn btn-sm btn-outline-danger" title="Excluir"><i
+                            class="bi bi-trash"></i></a>
+                </td>
+            </tr>
+            {% empty %}
+            <tr>
+                <td colspan="4" class="text-center py-4">Nenhuma mesa cadastrada.</td>
+            </tr>
+            {% endfor %}
+        </tbody>
+    </table>
+</div>
+{% endblock %}

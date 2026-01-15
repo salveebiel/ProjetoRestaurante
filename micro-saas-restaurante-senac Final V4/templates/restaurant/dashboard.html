@@ -1,0 +1,247 @@
+{% extends 'base.html' %}
+
+{% block title %}AdmSenac{% endblock %}
+
+{% block content %}
+<h2 class="mb-4 text-orange">Geral</h2>
+<div class="row g-4">
+    <div class="col-md-3">
+        <div class="card text-center h-100">
+            <div class="card-body text-light">
+                <h5 class="card-title text-light">Total de Mesas</h5>
+                <h2 class="display-4 text-light">{{ total_mesas }}</h2>
+                <a href="{% url 'mesa_list' %}" class="btn btn-outline-light btn-sm mt-2">Gerenciar</a>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-3">
+        <div class="card text-center h-100">
+            <div class="card-body">
+                <h5 class="card-title text-success">Mesas Livres</h5>
+                <h2 class="display-4 text-success">{{ mesas_livres }}</h2>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-3">
+        <div class="card text-center h-100">
+            <div class="card-body">
+                <h5 class="card-title text-danger">Mesas Ocupadas</h5>
+                <h2 class="display-4 text-danger">{{ mesas_ocupadas }}</h2>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-3">
+        <div class="card text-center h-100">
+            <div class="card-body">
+                <h5 class="card-title text-light">Itens no Menu</h5>
+                <h2 class="display-4">{{ total_pratos }}</h2>
+                <a href="{% url 'prato_list' %}" class="btn btn-outline-light btn-sm mt-2">Ver Cardápio</a>
+            </div>
+        </div>
+    </div>
+</div>
+
+<br>
+<h2 class="mb-4 text-orange">Pedidos em Tempo Real</h2>
+<div id="orders-container" class="row g-4">
+    <div class="col-12 text-center text-muted">
+        <div class="spinner-border text-orange" role="status">
+            <span class="visually-hidden">Loading...</span>
+        </div>
+        <p class="mt-2">Carregando pedidos...</p>
+    </div>
+</div>
+
+</script>
+
+<script>
+    function formatDate(date) {
+        let day = String(date.getDate()).padStart(2, '0');
+        let month = String(date.getMonth() + 1).padStart(2, '0');
+        let year = date.getFullYear();
+        let hours = String(date.getHours()).padStart(2, '0');
+        let minutes = String(date.getMinutes()).padStart(2, '0');
+        return `${day}/${month}/${year} ${hours}:${minutes}`;
+    }
+
+    function loadOrders() {
+        console.log('Loading orders...');
+        fetch('/api/pedidos/')
+            .then(response => {
+                if (!response.ok) throw new Error('Erro ao carregar pedidos');
+                return response.json();
+            })
+            .then(orders => {
+                const container = document.getElementById('orders-container');
+                container.innerHTML = '';
+
+                if (orders.length === 0) {
+                    container.innerHTML = '<div class="col-12 text-center text-muted"><p>Nenhum pedido recebido ainda.</p></div>';
+                    return;
+                }
+
+                orders.forEach(order => {
+                    let itemsHtml = '';
+                    order.itens.forEach(item => {
+                        itemsHtml += `
+                            <tr>
+                                <td class="text-secondary small">#${item.produto_id}</td>
+                                <td>${item.nome}</td>
+                                <td class="text-center">${item.quantidade}</td>
+                                <td class="text-end">R$ ${parseFloat(item.preco).toFixed(2).replace('.', ',')}</td>
+                                <td class="text-end">R$ ${parseFloat(item.total_item).toFixed(2).replace('.', ',')}</td>
+                            </tr>
+                        `;
+                    });
+
+                    const statusBadgeString = getStatusBadge(order.status_code, order.status);
+
+                    let advanceButton = '';
+                    if (order.status_code !== 'FINALIZADO') {
+                        advanceButton = `<button class="btn btn-sm btn-outline-warning border-0" onclick="updateOrderStatus(${order.id}, '${order.status_code}')" title="Avançar Status"><i class="bi bi-arrow-right-circle"></i></button>`;
+                    }
+
+                    // Ajustar horário para Brasília (UTC-3)
+                    let dateStr = order.data;
+                    let [datePart, timePart] = dateStr.split(' ');
+                    let [day, month, year] = datePart.split('/').map(Number);
+                    let [hour, minute] = timePart.split(':').map(Number);
+                    let date = new Date(year, month - 1, day, hour, minute);
+                    date.setHours(date.getHours() - 3);
+                    let adjustedDate = formatDate(date);
+
+                    const cardHtml = `
+                    <div class="col-md-6 col-lg-4" id="order-card-${order.id}">
+                        <div class="card bg-dark border-secondary h-100 shadow">
+                            <div class="card-header border-secondary d-flex justify-content-between align-items-center">
+                                <span class="fw-bold text-light fs-5">Mesa ${order.mesa}</span>
+                                <div class="d-flex align-items-center gap-2">
+                                    <span id="status-badge-${order.id}">${statusBadgeString}</span>
+                                    ${advanceButton}
+                                    <button class="btn btn-sm btn-outline-danger border-0" onclick="deleteOrder(${order.id})" title="Excluir Pedido">
+                                        <i class="bi bi-trash"></i>
+                                    </button>
+                                </div>
+                            </div>
+                            <div class="card-body p-0">
+                                <div class="p-3 bg-secondary bg-opacity-10 border-bottom border-secondary">
+                                    <div class="d-flex justify-content-between text-white small mb-1">
+                                        <span>Pedido #${order.id}</span>
+                                        <span>${adjustedDate}</span>
+                                    </div>
+                                </div>
+                                <div class="table-responsive" style="max-height: 250px; overflow-y: auto;">
+                                    <table class="table table-dark table-sm mb-0 align-middle">
+                                        <thead>
+                                            <tr>
+                                                <th class="text-secondary" style="width: 10%">ID</th>
+                                                <th style="width: 40%">Prato</th>
+                                                <th class="text-center" style="width: 15%">Qtd</th>
+                                                <th class="text-end" style="width: 15%">Unit.</th>
+                                                <th class="text-end" style="width: 20%">Total</th>
+                                            </tr>
+                                        </thead>
+                                        <tbody>
+                                            ${itemsHtml}
+                                        </tbody>
+                                    </table>
+                                </div>
+                            </div>
+                            <div class="card-footer border-secondary bg-dark d-flex justify-content-between align-items-center">
+                                <span class="text-white small">Total do Pedido</span>
+                                <span class="text-orange fs-4 fw-bold">R$ ${parseFloat(order.total).toFixed(2).replace('.', ',')}</span>
+                            </div>
+                        </div>
+                    </div>
+                    `;
+                    container.innerHTML += cardHtml;
+                });
+            })
+            .catch(error => console.error('Error:', error));
+    }
+
+    function deleteOrder(orderId) {
+        if (!confirm('Tem certeza que deseja excluir este pedido?')) return;
+
+        const csrftoken = getCookie('csrftoken');
+
+        fetch(`/api/pedido/${orderId}/delete/`, {
+            method: 'POST',
+            headers: {
+                'X-CSRFToken': csrftoken
+            }
+        })
+            .then(response => {
+                if (response.ok) {
+                    // Remove element visually immediately
+                    const card = document.getElementById(`order-card-${orderId}`);
+                    if (card) card.remove();
+
+                    // Reload to be sure
+                    loadOrders();
+                } else {
+                    alert('Erro ao excluir pedido');
+                }
+            })
+            .catch(error => console.error('Error:', error));
+    }
+
+    function getStatusBadge(code, label) {
+        let color = 'secondary';
+        if (code === 'NOVO') color = 'primary';
+        if (code === 'EM PREPARO') color = 'warning text-dark';
+        if (code === 'FINALIZADO') color = 'success';
+        return `<span class="badge bg-${color}">${label}</span>`;
+    }
+
+    function updateOrderStatus(orderId, currentStatus) {
+        let nextStatus;
+        if (currentStatus === 'NOVO') {
+            nextStatus = 'PREPARO';
+        } else if (currentStatus === 'PREPARO') {
+            nextStatus = 'FINALIZADO';
+        } else {
+            return; // FINALIZADO, no next
+        }
+
+        const csrftoken = getCookie('csrftoken');
+        fetch(`/api/pedido/${orderId}/update_status/`, {
+            method: 'POST',
+            headers: {
+                'X-CSRFToken': csrftoken,
+                'Content-Type': 'application/json'
+            },
+            body: JSON.stringify({status: nextStatus})
+        })
+        .then(response => {
+            if (response.ok) {
+                // Reload orders to update status
+                loadOrders();
+            } else {
+                alert('Erro ao atualizar status');
+            }
+        })
+        .catch(error => console.error('Error:', error));
+    }
+
+    function getCookie(name) {
+        let cookieValue = null;
+        if (document.cookie && document.cookie !== '') {
+            const cookies = document.cookie.split(';');
+            for (let i = 0; i < cookies.length; i++) {
+                const cookie = cookies[i].trim();
+                if (cookie.substring(0, name.length + 1) === (name + '=')) {
+                    cookieValue = decodeURIComponent(cookie.substring(name.length + 1));
+                    break;
+                }
+            }
+        }
+        return cookieValue;
+    }
+
+    // Load immediately
+    loadOrders();
+    // Poll every 10 seconds
+    setInterval(loadOrders, 10000);
+</script>
+{% endblock %}
