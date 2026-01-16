@@ -44,10 +44,10 @@ class Pedido(models.Model):
 
 class ItemPedido(models.Model):
     pedido = models.ForeignKey(Pedido, related_name='itens', on_delete=models.CASCADE)
-    produto = models.ForeignKey(Prato, on_delete=models.PROTECT)
+    produto = models.ForeignKey(Prato, on_delete=models.CASCADE)
     quantidade = models.IntegerField(verbose_name="Quantidade")
     preco_unitario = models.DecimalField(max_digits=10, decimal_places=2, verbose_name="Preço Unitário")
-    
+
     @property
     def total_item(self):
         return self.quantidade * self.preco_unitario
